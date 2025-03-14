@@ -1,9 +1,15 @@
-
 from KKT_Module.ksoc_global import kgl
 from KKT_Module.Configs import SettingConfigs
 from KKT_Module.SettingProcess.SettingProccess import SettingProc, ConnectDevice, ResetDevice
 from KKT_Module.DataReceive.DataReciever import RawDataReceiver, HWResultReceiver, FeatureMapReceiver
 import time
+import numpy as np
+import requests
+import json
+
+
+# 設定 NumPy 顯示完整數據
+np.set_printoptions(threshold=np.inf)
 
 def connect():
     connect = ConnectDevice()
@@ -19,35 +25,47 @@ def startSetting():
 
 def startLoop():
     # kgl.ksoclib.switchLogMode(True)
-    R = RawDataReceiver(chirps=32)
+    #R = RawDataReceiver(chirps=32)
 
     # Receiver for getting Raw data
-    # R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
+    R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
     # R = HWResultReceiver()                  # Receiver for getting hardware results (gestures, Axes, exponential)
     # buffer = DataBuffer(100)                # Buffer for saving latest frames of data
     R.trigger(chirps=32)                             # Trigger receiver before getting the data
     time.sleep(0.5)
     print('# ======== Start getting gesture ===========')
-    while True:                             # loop for getting the data
-        res = R.getResults()                # Get data from receiver
+
+    frame_count = 0  # 幀計數器
+
+    while True:
+        res = R.getResults()
         if res is None:
             continue
-        print('data = {}'.format(res))          # Print results
-        # time.sleep(0.05)
-        '''
-        Application for the data.
-        '''
+        
+        frame_count += 1  # 增加幀號
+        print(f'📸 幀號: {frame_count}')  # 顯示當前幀號
+
+         # res 內包含兩個 32x32 的 NumPy 陣列
+        rdi_map = np.array(res[0])  # RDI MAP
+        phd_map = np.array(res[1])  # PHD MAP
+        
+        print(f"📊 rdi = \n{rdi_map}")  # 顯示 RDI 數據
+        print(f"📊 phd = \n{phd_map}")  # 顯示 PHD 數據
+        
+        print("📡 收到 RDI 和 PHD 數據，準備發送 JSON...")
+
+        # 構建 JSON 資料
+        data = {
+            "frame": frame_count,  # 加入幀號
+            "RDI": rdi_map.tolist(),  # 轉換為 JSON 可傳輸格式
+            "PHD": phd_map.tolist()
+        }
 
 def main():
     kgl.setLib()
-
-    # kgl.ksoclib.switchLogMode(True)
-
-    connect()                               # First you have to connect to the device
-
-    startSetting()                         # Second you have to set the setting configs
-
-    startLoop()                             # Last you can continue to get the data in the loop
+    connect()
+    startSetting()
+    startLoop()
 
 if __name__ == '__main__':
     main()
