@@ -102,6 +102,7 @@ def startLoop():
         gesture_count += 1  # 增加手勢計數
 
         # 等待使用者按 Enter 鍵才繼續下一筆手勢的收集
+        
         input(f"請按 Enter 鍵繼續收集下一筆手勢 ({gesture_count}/{max_gesture_count})")
 
     print("✅ 所有手勢數據收集並上傳完成")
