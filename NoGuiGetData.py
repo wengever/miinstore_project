@@ -7,7 +7,6 @@ import numpy as np
 import requests
 import json
 
-
 # 設定 NumPy 顯示完整數據
 np.set_printoptions(threshold=np.inf)
 
@@ -21,45 +20,45 @@ def startSetting():
     SettingConfigs.setScriptDir("K60168-Test-00256-008-v0.0.8-20230717_120cm")  # Set the setting folder name
     ksp = SettingProc()                 # Object for setting process to setup the Hardware AI and RF before receive data
     ksp.startUp(SettingConfigs)             # Start the setting process
-    # ksp.startSetting(SettingConfigs)        # Start the setting process in sub_thread
 
-def startLoop():
-    # kgl.ksoclib.switchLogMode(True)
-    #R = RawDataReceiver(chirps=32)
-
-    # Receiver for getting Raw data
+def collectGestures():
     R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
-    # R = HWResultReceiver()                  # Receiver for getting hardware results (gestures, Axes, exponential)
-    # buffer = DataBuffer(100)                # Buffer for saving latest frames of data
-    R.trigger(chirps=32)                             # Trigger receiver before getting the data
+    R.trigger(chirps=32)                    # Trigger receiver before getting the data
     time.sleep(0.5)
-    print('# ======== Start getting gesture ===========')
+    print('# ======== 開始收集手勢 ===========')
 
-    frame_count = 0  # 幀計數器
+    frame_count = 0
+    max_frames = 100
 
-    while True:
+    while frame_count < max_frames:
         res = R.getResults()
         if res is None:
             continue
-        
-        frame_count += 1  # 增加幀號
-        print(f'📸 幀號: {frame_count}')  # 顯示當前幀號
 
-         # res 內包含兩個 32x32 的 NumPy 陣列
-        rdi_map = np.array(res[0])  # RDI MAP
-        phd_map = np.array(res[1])  # PHD MAP
-        
-        print(f"📊 rdi = \n{rdi_map}")  # 顯示 RDI 數據
-        print(f"📊 phd = \n{phd_map}")  # 顯示 PHD 數據
-        
-        print("📡 收到 RDI 和 PHD 數據，準備發送 JSON...")
+        frame_count += 1
+        print(f'📸 幀號: {frame_count}')
 
-        # 構建 JSON 資料
+        rdi_map = np.array(res[0])
+        phd_map = np.array(res[1])
+
+        print(f"📊 rdi = \n{rdi_map}")
+        print(f"📊 phd = \n{phd_map}")
+
         data = {
-            "frame": frame_count,  # 加入幀號
-            "RDI": rdi_map.tolist(),  # 轉換為 JSON 可傳輸格式
+            "frame": frame_count,
+            "RDI": rdi_map.tolist(),
             "PHD": phd_map.tolist()
         }
+
+    print("✅ 手勢收集完畢，共收集 100 幀。")
+
+def startLoop():
+    while True:
+        user_input = input("\n請輸入 'start' 開始手勢收集（或按 Ctrl+C 結束程式）：")
+        if user_input.strip().lower() == 'start':
+            collectGestures()
+        else:
+            print("❌ 指令錯誤，請輸入 'start' 才能開始收集手勢。")
 
 def main():
     kgl.setLib()
@@ -69,3 +68,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
