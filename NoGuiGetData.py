@@ -21,11 +21,7 @@ def startSetting():
     ksp = SettingProc()                 # Object for setting process to setup the Hardware AI and RF before receive data
     ksp.startUp(SettingConfigs)             # Start the setting process
 
-def collectGestures():
-    R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
-    R.trigger(chirps=32)                    # Trigger receiver before getting the data
-    time.sleep(0.5)
-    print('# ======== 開始收集手勢 ===========')
+def collectGestures(R):
 
     frame_count = 0
     max_frames = 100
@@ -53,10 +49,15 @@ def collectGestures():
     print("✅ 手勢收集完畢，共收集 100 幀。")
 
 def startLoop():
+    R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
+    R.trigger(chirps=32)                    # Trigger receiver before getting the data
+    time.sleep(0.5)
+    print('# ======== 開始收集手勢 ===========')
+
     while True:
         user_input = input("\n請輸入 'start' 開始手勢收集（或按 Ctrl+C 結束程式）：")
         if user_input.strip().lower() == 'start':
-            collectGestures()
+            collectGestures(R)
         else:
             print("❌ 指令錯誤，請輸入 'start' 才能開始收集手勢。")
 
@@ -68,4 +69,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
