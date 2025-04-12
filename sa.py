@@ -82,3 +82,4 @@ if __name__ == "__main__":
     print(DummySensor_I())  # 測試函數是否能正常工作
 else:
      print("no working")
+    
