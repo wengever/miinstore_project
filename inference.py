@@ -36,11 +36,22 @@ def compress_and_encode_json(data):
     # Return the base64 encoded string
     return base64_encoded.decode('utf-8')
 
-def collectGestures():
-    R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
-    R.trigger(chirps=32)                    # Trigger receiver before getting the data
-    time.sleep(0.5)
-    print('# ======== 開始收集手勢 ===========')
+def decode_and_decompress_base64(base64_encoded):
+    # Decode the base64 encoded string
+    compressed_data = base64.b64decode(base64_encoded)
+    
+    # Decompress the data using zlib
+    decompressed_data = zlib.decompress(compressed_data)
+    
+    # Convert the decompressed byte data back into a JSON string
+    json_data = decompressed_data.decode('utf-8')
+    
+    # Parse the JSON string into a Python dictionary
+    data = json.loads(json_data)
+    
+    return data
+
+def collectGestures(R):
 
     frame_count = 0
     max_frames = 100
@@ -68,13 +79,27 @@ def collectGestures():
 
         print(f"📊 compressed data (Base64) = \n{compressed_data_base64}")
 
+        # Example: let's say we already have a base64 encoded string from the previous function
+        base64_encoded_data = compressed_data_base64
+
+        # Decode and decompress the data
+        original_data = decode_and_decompress_base64(base64_encoded_data)
+
+        # Print the original JSON data
+        print("Original JSON data:", original_data)
+
     print("✅ 手勢收集完畢，共收集 100 幀。")
 
 def startLoop():
+    R = FeatureMapReceiver(chirps=32)       # Receiver for getting RDI PHD map
+    R.trigger(chirps=32)                    # Trigger receiver before getting the data
+    time.sleep(0.5)
+    print('# ======== 開始收集手勢 ===========')
+
     while True:
         user_input = input("\n請輸入 'start' 開始手勢收集（或按 Ctrl+C 結束程式）：")
         if user_input.strip().lower() == 'start':
-            collectGestures()
+            collectGestures(R)
         else:
             print("❌ 指令錯誤，請輸入 'start' 才能開始收集手勢。")
 
