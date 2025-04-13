@@ -8,7 +8,7 @@ import time
 import numpy as np
 import requests
 import json
-
+import datetime
 # 設定 NumPy 顯示完整數據
 np.set_printoptions(threshold=np.inf)
 
@@ -67,11 +67,18 @@ def collectGestures(R):
         rdi_map = np.array(res[0])
         phd_map = np.array(res[1])
 
+        # Get the current timestamp
+        timestamp = time.time()  # Get the current time in seconds since the epoch
+
+        # Convert timestamp to a datetime object
+        dt_object = datetime.datetime.fromtimestamp(timestamp)  # Convert timestamp to datetime
+
         # Create a dictionary to hold the frame data
         data = {
             "frame": frame_count,
             "RDI": rdi_map.tolist(),
-            "PHD": phd_map.tolist()
+            "PHD": phd_map.tolist(),
+            "datetime": dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")  # Add datetime with microseconds (up to microseconds precision)
         }
 
         # Compress and encode the JSON data
