@@ -9,6 +9,7 @@ import requests
 import json
 import base64
 import zlib
+import datetime
 
 
 ### IoTtalk 設定
@@ -67,11 +68,18 @@ def startLoop():
             rdi_map = np.array(res[0])  # RDI MAP
             phd_map = np.array(res[1])  # PHD MAP
 
+            # Get the current timestamp
+            timestamp = time.time()  # Get the current time in seconds since the epoch
+
+            # Convert timestamp to a datetime object
+            dt_object = datetime.datetime.fromtimestamp(timestamp)  # Convert timestamp to datetime
+
             # 存儲當前幀的數據
             gesture_frames.append({
                 "frame": frame_count,  # 加入幀號
                 "RDI": rdi_map.tolist(),  # 轉換為 JSON 可傳輸格式
-                "PHD": phd_map.tolist()
+                "PHD": phd_map.tolist(),
+                "datetime": dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")  # Add datetime with microseconds (up to microseconds precision)
             })
         
         # 完成一個手勢的數據收集，將其上傳至 IoTtalk
