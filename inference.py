@@ -81,19 +81,21 @@ def collectGestures(R):
             "datetime": dt_object.strftime("%Y-%m-%d %H:%M:%S.%f")  # Add datetime with microseconds (up to microseconds precision)
         }
 
+        print(data)
+        
         # Compress and encode the JSON data
         compressed_data_base64 = compress_and_encode_json(data)
 
         print(f"📊 compressed data (Base64) = \n{compressed_data_base64}")
 
-        # Example: let's say we already have a base64 encoded string from the previous function
-        base64_encoded_data = compressed_data_base64
+        # # Example: let's say we already have a base64 encoded string from the previous function
+        # base64_encoded_data = compressed_data_base64
 
-        # Decode and decompress the data
-        original_data = decode_and_decompress_base64(base64_encoded_data)
+        # # Decode and decompress the data
+        # original_data = decode_and_decompress_base64(base64_encoded_data)
 
-        # Print the original JSON data
-        print("Original JSON data:", original_data)
+        # # Print the original JSON data
+        # print("Original JSON data:", original_data)
 
     print("✅ 手勢收集完畢，共收集 100 幀。")
 
