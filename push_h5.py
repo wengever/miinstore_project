@@ -1,5 +1,10 @@
-import h5py
+from KKT_Module.ksoc_global import kgl
+from KKT_Module.Configs import SettingConfigs
+from KKT_Module.SettingProcess.SettingProccess import SettingProc, ConnectDevice, ResetDevice
+from KKT_Module.DataReceive.DataReciever import FeatureMapReceiver
+from model import initial_model, predict_result, ConvLSTMNet
 import sys
+import time
 from datetime import datetime
 from iottalkpy import dan
 
@@ -25,7 +30,7 @@ try:
         on_data=on_data,
         idf_list=idf_list,
         odf_list=odf_list,
-        name='MyDevice01',
+        name='wenggg',
         profile={
             "model": device_model,
             "is_sim": False,             # 是否為模擬裝置（可選）
@@ -36,36 +41,91 @@ except Exception as e:
     print('[✘] 註冊失敗:', e)
     sys.exit(1)
 
-# ====== 資料來源 (.h5) ======
-h5_file_path = r'C:\Users\Wengg\Desktop\Collect_RDI\Collect_RDI\Record\RDIPHD\turn_up\my_file.h5'
-current_index = 0
+# === 初始化硬體連線 ===
+def connect():
+    connect = ConnectDevice()
+    connect.startUp()
+    reset = ResetDevice()
+    reset.startUp()
 
-# ====== 手動推送一筆資料 ======
-def push_next_frame():
-    global current_index
-    try:
-        with h5py.File(h5_file_path, 'r') as h5_file:
-            ds1 = h5_file['DS1']
-            if current_index < ds1.shape[-1]:
-                ds1_data = ds1[0, :, :, current_index]
-                current_index += 1
-                data_mean = float(ds1_data.mean())
-                client.push('DummySensor-I', [data_mean])
-                print(datetime.now().isoformat(), f'→ 已推送：{data_mean}')
-            else:
-                print('📦 沒有更多資料了')
-                return False
-    except Exception as e:
-        print(f'讀取錯誤或推送失敗: {e}')
-        return False
-    return True
+# === 設定硬體參數 ===
+def startSetting():
+    SettingConfigs.setScriptDir("K60168-Test-00256-008-v0.0.8-20230717_60cm")
+    ksp = SettingProc()
+    ksp.startUp(SettingConfigs)
+
+# === 收集一筆手勢資料，更新color與luminance ===
+def startLoop(R):
+    global color, luminance
+
+    buffer_rdi = []
+    buffer_phd = []
+
+    print("✅ 開始收集手勢資料...請稍後...")
+
+    while len(buffer_rdi) < 50:
+        res = R.getResults()
+        if res is None:
+            continue
+        buffer_rdi.append(res[0])
+        buffer_phd.append(res[1])
+        print(f"📡 收集中: {len(buffer_rdi)}/50 幀", end='\r')
+
+    # 預測手勢
+    gesture = predict_result(buffer_rdi, buffer_phd, model)
+    print(f'\n✅ 偵測到的手勢為: {gesture}')
+
+    # 根據手勢更新 color 和 luminance
+    if gesture == 'turn_up':
+        luminance += 1
+    elif gesture == 'turn_down':
+        luminance -= 1
+    elif gesture == 'turn_right':
+        color += 1
+    elif gesture == 'turn_left':
+        color -= 1
+
+    color = float(color)
+    client.push('DummySensor-I', [color])
+    print(datetime.now().isoformat(), f'→ 已推送：{color}')
+
 
 # ====== 主程式互動 ======
+def main():
+    global model
+    kgl.setLib()
+    connect()
+    startSetting()
+    model = initial_model()
+    R = FeatureMapReceiver(chirps=32)
+    R.trigger(chirps=32)
+    time.sleep(0.5)
+
+    print('# ======== 請輸入 start 開始收集手勢 =========')
+
+    try:
+        while True:
+            user_input = input("\n請輸入 'start' 開始偵測（Ctrl+C 離開）：")
+            if user_input.strip().lower() == 'start':
+                startLoop(R)
+            else:
+                print("❌ 輸入錯誤，請輸入 'start'。")
+
+            time.sleep(0.5)  # 避免過快的迴圈
+            
+    except KeyboardInterrupt:
+        print("\n🛑 偵測中斷（Ctrl+C）")
+
+    finally:
+        try:
+            client.deregister()
+            print("✅ 已解除裝置註冊")
+        except Exception as e:
+            print("⚠️ 解除註冊失敗：", e)
+
+color = 0
+luminance = 0
+
+
 if __name__ == '__main__':
-    while True:
-        cmd = input('輸入 [push] 推送一筆資料，或 [exit] 離開：').strip().lower()
-        if cmd == 'push':
-            if not push_next_frame():
-                break
-        elif cmd == 'exit':   
-            break
+    main()
