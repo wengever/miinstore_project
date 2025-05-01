@@ -27,7 +27,7 @@ try:
         odf_list=odf_list,
         profile={
             "model": device_model,
-            "is_sim": False,             # 是否為模擬裝置（可選）
+            "is_sim": False,
         }
     )   
     print('[✔] 裝置註冊成功')
@@ -61,10 +61,19 @@ def push_next_frame():
 
 # ====== 主程式互動 ======
 if __name__ == '__main__':
-    while True:
-        cmd = input('輸入 [push] 推送一筆資料，或 [exit] 離開：').strip().lower()
-        if cmd == 'push':
-            if not push_next_frame():
+    try:
+        while True:
+            cmd = input('輸入 [push] 推送一筆資料，或 [exit] 離開：').strip().lower()
+            if cmd == 'push':
+                if not push_next_frame():
+                    break
+            elif cmd == 'exit':
                 break
-        elif cmd == 'exit':   
-            break
+    except KeyboardInterrupt:
+        print('\n🛑 中斷操作（Ctrl+C）')
+    finally:
+        try:
+            client.deregister()
+            print('✅ 已解除裝置註冊')
+        except Exception as e:
+            print('⚠️ 解除註冊失敗:', e)
