@@ -30,10 +30,11 @@ try:
         on_data=on_data,
         idf_list=idf_list,
         odf_list=odf_list,
-        name='wenggg',
+        name = 'wenggg',
+        id_= '990b2d60-9ff8-4503-95dc-eb700c71a707',
         profile={
             "model": device_model,
-            "is_sim": False,             # 是否為模擬裝置（可選）
+            "is_sim": False,
         }
     )   
     print('[✔] 裝置註冊成功')
@@ -55,8 +56,31 @@ def startSetting():
     ksp.startUp(SettingConfigs)
 
 # === 收集一筆手勢資料，更新color與luminance ===
+# ====== 全域變數 ======
+luminance = 99.0
+color = 3.0
+red = 255.0
+green = 255.0
+blue = 0.0
+
+def update_rgb_by_color():
+    global red, green, blue, color
+    color_mod = color % 6.0
+    if color_mod == 0.0:
+        red, green, blue = 255.0, 0.0, 0.0
+    elif color_mod == 1.0:
+        red, green, blue = 0.0, 255.0, 0.0
+    elif color_mod == 2.0:
+        red, green, blue = 0.0, 0.0, 255.0
+    elif color_mod == 3.0:
+        red, green, blue = 255.0, 255.0, 0.0
+    elif color_mod == 4.0:
+        red, green, blue = 0.0, 255.0, 255.0
+    elif color_mod == 5.0:
+        red, green, blue = 255.0, 0.0, 255.0
+
 def startLoop(R):
-    global color, luminance
+    global color, luminance, red, green, blue
 
     buffer_rdi = []
     buffer_phd = []
@@ -75,19 +99,30 @@ def startLoop(R):
     gesture = predict_result(buffer_rdi, buffer_phd, model)
     print(f'\n✅ 偵測到的手勢為: {gesture}')
 
-    # 根據手勢更新 color 和 luminance
+    
+    # 根據手勢更新 luminance 與 color 並略過 background
     if gesture == 'turn_up':
-        luminance += 1
+        luminance = min(luminance + 33.0, 99.0)
     elif gesture == 'turn_down':
-        luminance -= 1
+        luminance = max(luminance - 33.0, 0.0)
     elif gesture == 'turn_right':
-        color += 1
+        color += 1.0
     elif gesture == 'turn_left':
-        color -= 1
+        color -= 1.0
 
-    color = float(color)
-    client.push('DummySensor-I', [color])
-    print(datetime.now().isoformat(), f'→ 已推送：{color}')
+    # 根據 color 計算 RGB
+    update_rgb_by_color()
+
+    try:
+        data_list = [luminance, red, green, blue]
+        client.push('DummySensor-I', [data_list])
+        print(datetime.now().isoformat(), f'→ 已推送：{data_list}')
+    except Exception as e:
+        print(f'推送失敗: {e}')
+        return False
+
+    return True
+
 
 
 # ====== 主程式互動 ======
@@ -122,10 +157,6 @@ def main():
             print("✅ 已解除裝置註冊")
         except Exception as e:
             print("⚠️ 解除註冊失敗：", e)
-
-color = 0
-luminance = 0
-
 
 if __name__ == '__main__':
     main()
