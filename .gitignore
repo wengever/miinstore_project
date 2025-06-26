@@ -1,0 +1,8 @@
+__pycache__/
+.idea/
+.venv/
+Config/
+KKT_Module/
+KSOC_USB_Tools/
+Lib/
+Library/
