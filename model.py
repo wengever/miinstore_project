@@ -95,7 +95,6 @@ class ConvLSTMNet(nn.Module):
         return out
 
 def initial_model():
-    # ⭐⭐ 加上這一行很重要 ⭐⭐
     sys.modules['__main__'].ConvLSTMNet = ConvLSTMNet
     
     model = torch.load(model_path, map_location=torch.device('cpu'))
